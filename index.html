@@ -992,13 +992,12 @@ function irAProductos(){
   });
 }
 
-// Hide nav-bar when cart is visible, show when cart is hidden
-const _origUpdateCartUI = updateCartUI;
-function updateCartUI(){
-  _origUpdateCartUI();
+// Hide nav-bar when cart is visible using MutationObserver (no stack overflow)
+const _cartBarObserver = new MutationObserver(()=>{
   const cartVisible = document.getElementById('cart-bar').classList.contains('visible');
-  document.getElementById('nav-bar').classList.toggle('hidden', cartVisible);
-}
+  const navBar = document.getElementById('nav-bar');
+  if(navBar) navBar.classList.toggle('hidden', cartVisible);
+});
 
 // Scroll reveal observer
 function initReveal(){
@@ -1014,6 +1013,9 @@ function initReveal(){
 renderProducts();
 renderCombos();
 initReveal();
+// Start cart bar observer
+const _cartBarEl = document.getElementById('cart-bar');
+if(_cartBarEl) _cartBarObserver.observe(_cartBarEl, {attributes:true, attributeFilter:['class']});
 
 </script>
 

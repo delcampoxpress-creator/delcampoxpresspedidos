@@ -22,7 +22,7 @@
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--black);min-height:100vh;}
 
 /* LAYOUT */
-.wrap{max-width:960px;margin:0 auto;padding:0 0 120px;}
+.wrap{max-width:960px;margin:0 auto;padding:0 0 160px;}
 
 .sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
 .sec-title::after{content:'';flex:1;height:2px;background:var(--yellow);border-radius:2px;}
@@ -197,6 +197,19 @@ input.error,select.error,textarea.error{border-color:var(--red);}
 .upsell-confirm{width:100%;padding:14px;border-radius:12px;border:none;background:#0d0d0d;color:var(--yellow);font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;cursor:pointer;}
 .upsell-confirm:hover{background:#333;}
 .upsell-skip{width:100%;padding:10px;border-radius:12px;border:1.5px solid #e0e0e0;background:transparent;color:#999;font-family:'Nunito',sans-serif;font-size:.85rem;cursor:pointer;}
+
+/* NAV BUTTONS FLOTANTES */
+.nav-bar{position:fixed;bottom:0;left:0;right:0;z-index:190;background:#fff;border-top:1px solid #e0e0e0;padding:10px 12px 14px;display:flex;gap:8px;transition:transform .3s;}
+.nav-bar.hidden{transform:translateY(100%);}
+.nav-btn{flex:1;padding:12px 8px;border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1.5px;cursor:pointer;transition:all .15s;}
+.nav-btn-combos{background:var(--black);color:var(--yellow);}
+.nav-btn-combos:hover{background:#333;}
+.nav-btn-armar{background:var(--yellow);color:var(--black);}
+.nav-btn-armar:hover{background:var(--yellow-dark);}
+
+/* SCROLL REVEAL */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .5s ease,transform .5s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
@@ -684,7 +697,7 @@ function renderDynamicCard(p){
 function renderProducts(){
   const grid = document.getElementById('prod-grid');
   grid.innerHTML = PRODUCTS.filter(p=>p && p.id).map(p=>`
-    <div class="prod-card">
+    <div class="prod-card reveal">
       ${p.img ? `<img class="prod-img" src="${p.img}" alt="${p.name}">` : `<div class="prod-emoji">${p.emoji}</div>`}
       <div style="padding:0 12px;">
       <div class="prod-name">${p.name}</div>
@@ -726,7 +739,7 @@ function renderProducts(){
 function renderCombos(){
   const grid = document.getElementById('combo-grid');
   grid.innerHTML = COMBOS.filter(c=>c && c.id).map(c=>`
-    <div class="combo-card${c.outOfStock?' oos':''}" style="position:relative;">
+    <div class="combo-card reveal${c.outOfStock?' oos':''}" style="position:relative;">
       ${c.outOfStock ? '<div class="out-of-stock-overlay"><div class="out-of-stock-label">SIN STOCK</div></div>' : ''}
       ${c.tag ? `<div class="combo-tag-top">${c.tag}</div>` : ''}
       ${c.badge ? `<div class="combo-badge${c.badgeClass ? ' '+c.badgeClass : ''}">${c.badge}</div>` : ''}
@@ -959,9 +972,49 @@ function maybeShowUpsell(){
   }
 }
 
+
+// ─── NAV FLOTANTE ────────────────────────────────────────────────────
+function irACombos(){
+  // Show all combos (reveal animation)
+  const grid = document.getElementById('combo-grid');
+  grid.querySelectorAll('.reveal').forEach((el,i)=>{
+    setTimeout(()=>el.classList.add('visible'), i*80);
+  });
+  const target = document.querySelector('.sec-title');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function irAProductos(){
+  const target = document.getElementById('prod-grid');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+  // Reveal products with cascade
+  target.querySelectorAll('.reveal').forEach((el,i)=>{
+    setTimeout(()=>el.classList.add('visible'), i*80);
+  });
+}
+
+// Hide nav-bar when cart is visible, show when cart is hidden
+const _origUpdateCartUI = updateCartUI;
+function updateCartUI(){
+  _origUpdateCartUI();
+  const cartVisible = document.getElementById('cart-bar').classList.contains('visible');
+  document.getElementById('nav-bar').classList.toggle('hidden', cartVisible);
+}
+
+// Scroll reveal observer
+function initReveal(){
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting) e.target.classList.add('visible');
+    });
+  },{threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────
 renderProducts();
 renderCombos();
+initReveal();
 
 </script>
 
@@ -1008,6 +1061,12 @@ renderCombos();
       <button class="upsell-skip" onclick="skipUpsell()">No gracias, continuar sin agregar</button>
     </div>
   </div>
+</div>
+
+<!-- NAV FLOTANTE -->
+<div class="nav-bar" id="nav-bar">
+  <button class="nav-btn nav-btn-combos" onclick="irACombos()">🔥 VER PROMOS</button>
+  <button class="nav-btn nav-btn-armar" onclick="irAProductos()">🛒 ARMÁ TU COMBO</button>
 </div>
 </body>
 </html>
